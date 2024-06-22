@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager</title>
+</head>
+<body>
+    <h1>Password Manager</h1>
+    <form id="passwordForm">
+        <input type="text" id="login" placeholder="Enter Login" required>
+        <input type="password" id="password" placeholder="Enter Password" required>
+        <input type="url" id="url" placeholder="Enter URL" required>
+        <button type="submit" style="width: 95%; padding: 10px; margin: 5px 0; background-color: blue; color: white; border: none; cursor: pointer;">Add Password</button>
+    </form>
+    <div id="editSection" style="display: none; background-color: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
+        <input type="hidden" id="editIndex">
+        <input type="text" id="editLogin" placeholder="Enter Login" required>
+        <input type="password" id="editPassword" placeholder="Enter Password" required>
+        <input type="url" id="editUrl" placeholder="Enter URL" required>
+        <button type="button" id="saveChangesBtn" style="width: 95%; padding: 10px; margin: 5px 0; background-color: blue; color: white; border: none; cursor: pointer;">Save Changes</button>
+        <button type="button" id="cancelChangesBtn" style="width: 95%; padding: 10px; margin: 5px 0; background-color: blue; color: white; border: none; cursor: pointer;">Cancel</button>
+    </div>
+    <ul id="passwordList"></ul>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let passwords = JSON.parse(localStorage.getItem('passwords')) || [];
+            const passForm = document.getElementById('passwordForm');
+            const editSect = document.getElementById('editSection');
+            const passList = document.getElementById('passwordList');
+            const editIdx = document.getElementById('editIndex');
+
+            function displPasswd() {
+                passList.innerHTML = '';
+                for (let i = 0; i < passwords.length; i++) {
+                    let pwd = passwords[i];
+                    let li = document.createElement('li');
+                    li.innerHTML = '<div>Login: ' + pwd.login + '</div>' +
+                                   '<div>URL: <a href="' + pwd.url + '" target="_blank">' + pwd.url + '</a></div>' +
+                                   '<div>Password: <span id="pwd-' + i + '">****</span></div>' +
+                                   '<button onclick="copyPwd(' + i + ')" style="width: 95%; padding: 10px; margin: 5px 0; background-color: blue; color: white; border: none; cursor: pointer;">Copy</button>' +
+                                   '<button onclick="startEdit(' + i + ')" style="width: 95%; padding: 10px; margin: 5px 0; background-color: blue; color: white; border: none; cursor: pointer;">Edit</button>' +
+                                   '<button onclick="removePwd(' + i + ')" style="width: 95%; padding: 10px; margin: 5px 0; background-color: blue; color: white; border: none; cursor: pointer;">Delete</button>';
+                    passList.appendChild(li);
+                }
+            }
+
+            window.copyPwd = async function(idx) {
+                let pwd = passwords[idx];
+                try {
+                    await navigator.clipboard.writeText(pwd.password);
+                    alert('Password copied to clipboard!');
+                } catch (err) {
+                    console.error('Failed to copy: ', err);
+                    alert('Failed to copy password to clipboard.');
+                }
+            }
+
+            window.startEdit = function(idx) {
+                let pwd = passwords[idx];
+                document.getElementById('editLogin').value = pwd.login;
+                document.getElementById('editPassword').value = pwd.password;
+                document.getElementById('editUrl').value = pwd.url;
+                editIdx.value = idx;
+                editSect.style.display = 'block';
+                passForm.style.display = 'none';
+            }
+
+            window.removePwd = function(idx) {
+                passwords.splice(idx, 1);
+                localStorage.setItem('passwords', JSON.stringify(passwords));
+                displPasswd();
+            }
+
+            document.getElementById('saveChangesBtn').addEventListener('click', function() {
+                let idx = editIdx.value;
+                let login = document.getElementById('editLogin').value;
+                let password = document.getElementById('editPassword').value;
+                let url = document.getElementById('editUrl').value;
+                passwords[idx] = { login, password, url };
+                localStorage.setItem('passwords', JSON.stringify(passwords));
+                displPasswd();
+                editSect.style.display = 'none';
+                passForm.style.display = 'block';
+            });
+
+            document.getElementById('cancelChangesBtn').addEventListener('click', function() {
+                editSect.style.display = 'none';
+                passForm.style.display = 'block';
+            });
+
+            passForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                let login = document.getElementById('login').value;
+                let password = document.getElementById('password').value;
+                let url = document.getElementById('url').value;
+                passwords.push({ login, password, url });
+                localStorage.setItem('passwords', JSON.stringify(passwords));
+                displPasswd();
+                passForm.reset();
+            });
+
+            displPasswd();
+        });
+    </script>
+</body>
+</html>
